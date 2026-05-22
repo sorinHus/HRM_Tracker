@@ -9,8 +9,8 @@ A bilingual (EN/RO) single-file web application for tracking personnel file entr
 
 ## Live Demo
 
-Open `hr_dosare_manager_DEMO.html` directly in any browser — no installation required.  
-Or visit the [GitHub Pages demo →](https://sorinhus.github.io/MRU_Tracker/hr_file_manager_DEMO.html)
+Open `index.html` directly in any browser — no installation required.  
+Or visit the [GitHub Pages demo →](https://sorinhus.github.io/HRM_Tracker/)
 
 ---
 
@@ -53,7 +53,7 @@ Or visit the [GitHub Pages demo →](https://sorinhus.github.io/MRU_Tracker/hr_f
 
 ```
 hr-records-manager/
-├── hr_file_manager_DEMO.html     # Full application — open directly in browser
+├── index.html                    # Full application — open directly in browser
 ├── server_demo.py                # Lightweight Python HTTP server for network sync
 ├── START_SERVER.bat              # Windows launcher for the server
 └── README.md
@@ -64,7 +64,7 @@ hr-records-manager/
 ## Running Locally
 
 ### Standalone (demo mode)
-Just open `hr_dosare_manager_DEMO.html` in your browser. Progress is stored in memory for the session only.
+Just open `index.html` in your browser. Progress is stored in memory for the session only.
 
 ### With network sync
 Requires Python 3 (no additional packages).
