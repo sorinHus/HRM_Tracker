@@ -33,7 +33,8 @@ Or visit the [GitHub Pages demo →](https://sorinhus.github.io/HRM_Tracker/)
 - **Sortable table** — click any column header to sort ascending/descending
 - **Export to CSV** — exports current filtered view; column headers respect active language
 - **Network sync** (production mode) — Python HTTP server syncs progress across all operators in real time via shared `progress.json`; changes are persisted automatically
-- **Auto-discovery** — clients open the HTML file locally and the app finds the server on the LAN automatically
+- **Total progress card** — overall completion percentage, completed vs. remaining records
+- **Sync status indicator** — shows connection state, last save and last sync time; falls back to demo mode when no server is reachable (file:// or GitHub Pages)
 - **Auto-shortcut** — server generates `OPEN_APP.bat` on startup with the correct network IP for colleagues
 
 ---

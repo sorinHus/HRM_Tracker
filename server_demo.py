@@ -12,7 +12,7 @@ from pathlib import Path
 PORT      = 8080
 BASE      = Path(__file__).parent
 PROG_FILE = BASE / 'progress.json'
-HTML_FILE = BASE / 'hr_dosare_manager_DEMO.html'
+HTML_FILE = BASE / 'index.html'
 
 CORS = [
     ('Access-Control-Allow-Origin',  '*'),

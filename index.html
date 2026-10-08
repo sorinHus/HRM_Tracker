@@ -80,6 +80,15 @@ body{font-family:'Georgia',serif;background:var(--bg);color:var(--text);font-siz
 .prio-1 .pfill{background:var(--p1-fg);}
 .prio-2 .pfill{background:var(--p2-fg);}
 
+/* TOTAL PROGRESS */
+.total-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 15px;margin-bottom:14px;}
+.total-card .th{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+.total-card .tl{font-size:12px;font-weight:700;}
+.total-card .tp{font-size:26px;font-weight:700;color:var(--green);line-height:1;}
+.total-card .ts{font-size:11px;color:var(--text3);margin-top:4px;}
+.total-card .pbar{height:8px;}
+.total-card .pfill{background:var(--green);}
+
 /* DASH GRID */
 .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
@@ -213,6 +222,7 @@ tr.done .nc{text-decoration:line-through;}
 
     <div class="view active" id="view-dashboard">
       <div class="stats-row" id="stats-row"></div>
+      <div class="total-card" id="total-card"></div>
       <div class="prio-row" id="prio-row"></div>
       <div class="dash-grid">
         <div class="panel">
@@ -306,6 +316,9 @@ const T = {
     notifDone:' – marked as done',notifUndo:' – undone',
     rowsCount:' records',
     demoMode:'Demo mode – changes not persisted',
+    totalProgress:'Total progress',remaining:'remaining',
+    syncConnecting:'Connecting...',syncSaving:'Saving...',syncSaved:'Saved · ',syncSynced:'Synced · ',
+    syncConnected:'Connected · {n} completed',syncLost:'Connection lost',syncDown:'Server unreachable',
     bannerTitle:'DEMO',bannerText:'Fictional data for portfolio. Does not represent real individuals.',
     sbTitle:'HR Records Manager',sbSub:'Personnel file tracking system',sbDemo:'Demo – fictional data',
     sbBottom:'Date: demo · fictional data',
@@ -335,6 +348,9 @@ const T = {
     notifDone:' – introdus',notifUndo:' – anulat',
     rowsCount:' înregistrări',
     demoMode:'Mod demo – modificările nu se salvează',
+    totalProgress:'Progres total',remaining:'rămase',
+    syncConnecting:'Se conectează...',syncSaving:'Se salvează...',syncSaved:'Salvat · ',syncSynced:'Sincronizat · ',
+    syncConnected:'Conectat · {n} introduse',syncLost:'Conexiune pierdută',syncDown:'Server inaccesibil',
     bannerTitle:'DEMO',bannerText:'Date fictive generate pentru portofoliu. Nu reprezintă persoane reale.',
     sbTitle:'HR Dosare Manager',sbSub:'Sistem gestiune dosare personal',sbDemo:'Demo – date fictive',
     sbBottom:'Stat. date: demo · date fictive',
@@ -359,7 +375,7 @@ function setLang(lang, btn){
   document.getElementById('banner-text').textContent = t('bannerText');
   document.getElementById('btn-export').textContent = t('exportCsv');
   document.getElementById('btn-move').textContent = t('moveSelected');
-  document.getElementById('sync-lbl').textContent = t('demoMode');
+  renderSyncStatus();
   document.getElementById('lbl-views').textContent = t('lblViews');
   document.getElementById('lbl-p1').textContent = t('lblP1');
   document.getElementById('lbl-p2').textContent = t('lblP2');
@@ -476,6 +492,16 @@ function renderDashboard(){
     <div class="sc"><div class="lbl">${t('stats').done}</div><div class="val" style="color:var(--green)">${done}</div><div class="sub">${pct}%</div></div>
     <div class="sc"><div class="lbl">${t('stats').vac}</div><div class="val" style="color:var(--red)">${vac}</div></div>`;
 
+  const pctExact=total?done/total*100:0;
+  const pctTxt=LANG==='ro'?pctExact.toFixed(1).replace('.',','):pctExact.toFixed(1);
+  document.getElementById('total-card').innerHTML=`
+    <div class="th">
+      <span class="tl">${t('totalProgress')}</span>
+      <span class="tp">${pctTxt}%</span>
+    </div>
+    <div class="pbar"><div class="pfill" style="width:${pctExact}%"></div></div>
+    <div class="ts">${done}${t('recorded')}${t('outOf')}${total} · ${t('remaining')} ${total-done}</div>`;
+
   const condDone=ALL_DATA.filter(d=>(d.tip==='management'||d.tip==='elected')&&d.introdus).length;
   const execDone=ALL_DATA.filter(d=>d.tip==='execution'&&d.introdus).length;
   const cp=mgmt?Math.round(condDone/mgmt*100):0;
@@ -544,7 +570,9 @@ function updateSidebar(){
     document.getElementById(`cnt-c${op}`).textContent=cdn?`${cdn}/${cd.length}`:cd.length;
   }
   document.getElementById('cnt-vac').textContent=ALL_DATA.filter(d=>d.status==='vacant'||d.status==='temp_vacant').length;
-  document.getElementById('cnt-done').textContent=ALL_DATA.filter(d=>d.introdus).length;
+  const _done=ALL_DATA.filter(d=>d.introdus).length;
+  const _pct=ALL_DATA.length?(_done/ALL_DATA.length*100).toFixed(1):'0.0';
+  document.getElementById('cnt-done').textContent=`${_done} · ${LANG==='ro'?_pct.replace('.',','):_pct}%`;
 }
 
 function showView(v,param){
@@ -590,7 +618,7 @@ function toggleDone(id){
   const d=ALL_DATA.find(x=>x.id===id);
   if(!d)return;
   d.introdus=!d.introdus;
-  renderTable();updateSidebar();
+  saveProgress();renderTable();updateSidebar();
   if(ST.view==='dashboard')renderDashboard();
   notify(d.nume+(d.introdus?t('notifDone'):t('notifUndo')));
 }
@@ -624,6 +652,7 @@ function doReassign(op){
   ST.reassignIds.forEach(id=>{const d=ALL_DATA.find(x=>x.id===id);if(d)d.operator=op;});
   ST.sel.clear();
   closeModal();renderTable();updateSidebar();
+  saveProgress();
   if(ST.view==='dashboard')renderDashboard();
   notify(t('movedTo')+op);
 }
@@ -654,6 +683,94 @@ function notify(msg){
 // INIT
 updateSidebar();
 renderDashboard();
+
+// ── Server sync ──────────────────────────────────────────────────────────────
+// Served by server_demo.py → progress is shared across the LAN via progress.json.
+// Opened from file:// or GitHub Pages → no server, stays in demo mode.
+const SERVER = location.protocol.startsWith('http') ? location.origin : null;
+let SYNC = {state:'offline', key:'demoMode', extra:''};
+let syncPollTimer = null;
+let lastSavedAt = null;
+let isSaving = false;
+
+function setSyncStatus(state, key, extra){
+  SYNC = {state, key, extra:extra||''};
+  renderSyncStatus();
+}
+
+function renderSyncStatus(){
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-lbl');
+  if(!dot||!lbl) return;
+  const c = {ok:'#4caf80', saving:'#f5a623', error:'#e05252', offline:'#9a9788'};
+  dot.style.background = c[SYNC.state]||'#9a9788';
+  lbl.textContent = t(SYNC.key).replace('{n}', SYNC.extra) + (SYNC.key==='syncSaved'||SYNC.key==='syncSynced' ? SYNC.extra : '');
+}
+
+function nowTime(){ return new Date().toLocaleTimeString(LANG==='ro'?'ro-RO':'en-GB'); }
+
+function saveProgress(){
+  if(!syncPollTimer||isSaving) return;
+  isSaving = true;
+  setSyncStatus('saving','syncSaving');
+  const done = ALL_DATA.filter(d=>d.introdus).map(d=>d.id);
+  const ops = {};
+  ALL_DATA.forEach(d=>{ ops[d.id]=d.operator; });
+  const payload = {done, ops, savedAt: new Date().toISOString()};
+  fetch(SERVER+'/progress.json', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  })
+  .then(r=>r.json())
+  .then(()=>{
+    lastSavedAt = payload.savedAt;
+    setSyncStatus('ok','syncSaved',nowTime());
+  })
+  .catch(()=>setSyncStatus('error','syncLost'))
+  .finally(()=>{ isSaving=false; });
+}
+
+function applyData(data){
+  if(!data) return;
+  const doneSet = new Set(data.done||[]);
+  ALL_DATA.forEach(d=>{
+    d.introdus = doneSet.has(d.id);
+    if(data.ops && data.ops[d.id]!==undefined) d.operator = data.ops[d.id];
+  });
+  lastSavedAt = data.savedAt||null;
+  updateSidebar();
+  if(ST.view==='dashboard') renderDashboard(); else renderTable();
+}
+
+function pullProgress(){
+  fetch(SERVER+'/progress.json?t='+Date.now())
+  .then(r=>r.json())
+  .then(data=>{
+    if(!data.done||(lastSavedAt&&data.savedAt&&data.savedAt<=lastSavedAt)) return;
+    applyData(data);
+    setSyncStatus('ok','syncSynced',nowTime());
+  })
+  .catch(()=>setSyncStatus('error','syncDown'));
+}
+
+function initSync(){
+  if(!SERVER){ setSyncStatus('offline','demoMode'); return; }
+  setSyncStatus('offline','syncConnecting');
+  fetch(SERVER+'/progress.json?t='+Date.now())
+  .then(r=>{
+    if(!r.ok) throw new Error('no-server');
+    return r.json();
+  })
+  .then(data=>{
+    applyData(data);
+    setSyncStatus('ok','syncConnected',String((data.done||[]).length));
+    if(!syncPollTimer) syncPollTimer = setInterval(pullProgress, 15000);
+  })
+  .catch(()=>setSyncStatus('offline','demoMode'));
+}
+
+initSync();
 </script>
 </body>
 </html>
