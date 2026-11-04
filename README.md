@@ -100,7 +100,7 @@ Progress is saved to `progress.json` on every action (mark complete, reassign). 
 
 ## Real-World Context
 
-This tool was built to coordinate the entry of **874 personnel files** into an HR management system (MRU) at a Romanian public institution. Key constraints that shaped the design:
+This tool was built to coordinate the entry of **nearly 900 personnel files** into an HRM Digitization system at a Romanian public institution. Key constraints that shaped the design:
 
 - **No internet access** — all resources inline, server runs on the local network
 - **No software installation** — operators use standard browsers; only one machine needs Python
